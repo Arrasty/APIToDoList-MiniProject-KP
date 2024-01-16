@@ -13,9 +13,10 @@ type Todo struct {
 	Completed   bool      `json:"completed"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	CompletedAt time.Time `json:"completed_at"` // Tambahkan atribut untuk menandai kapan tugas selesai
+	CompletedAt time.Time `gorm:"type:timestamp" json:"completed_at"` // Tambahkan atribut untuk menandai kapan tugas selesai
 }
 
+//memperbarui field UpdatedAt sebelum menyimpan perubahan
 func (t *Todo) BeforeUpdate(tx *gorm.DB) (err error) {
 	t.UpdatedAt = time.Now()
 	return nil

@@ -2,12 +2,14 @@ package http
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/Arrasty/api_todolist/internal/domain"
 	"github.com/Arrasty/api_todolist/internal/usecase"
 	"github.com/gin-gonic/gin"
 )
 
+//untuk menangani operasi CRUD pada TODO
 type TodoHandler struct {
 	todoUseCase usecase.TodoUseCase
 }
@@ -55,6 +57,7 @@ func (h *TodoHandler) GetAll(c *gin.Context) {
 	c.JSON(200, gin.H{"todos": todos})
 }
 
+//Memanggil GetCompleted dari todoUseCase untuk mendapatkan daftar Todo yang sudah selesai
 func (h *TodoHandler) GetCompleted(c *gin.Context) {
 	completedTodos, err := h.todoUseCase.GetCompleted()
 	if err != nil {
@@ -155,6 +158,7 @@ func (h *TodoHandler) MarkAsCompleted(c *gin.Context) {
 
 	// Menandai tugas sebagai selesai hanya dengan memperbarui atribut Completed
 	existingTodo.Completed = !existingTodo.Completed
+	existingTodo.CompletedAt = time.Now()
 
 	// Update todo
 	if err := h.todoUseCase.Update(existingTodo); err != nil {
@@ -163,4 +167,21 @@ func (h *TodoHandler) MarkAsCompleted(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "todo marked as completed successfully", "todo": existingTodo})
+}
+
+//Function untuk menampilkan task yang uncompleted
+func (h *TodoHandler) GetUnCompleted(c *gin.Context) {
+    // GetUnCompleted retrieves all uncompleted todos.
+    unCompletedTodos, err := h.todoUseCase.GetUnCompleted()
+    if err != nil {
+        c.JSON(500, gin.H{"error": "error getting uncompleted todos"})
+        return
+    }
+
+    if len(unCompletedTodos) == 0 {
+        c.JSON(200, gin.H{"message": "No uncompleted todos found"})
+        return
+    }
+
+    c.JSON(200, gin.H{"unCompletedTodos": unCompletedTodos})
 }

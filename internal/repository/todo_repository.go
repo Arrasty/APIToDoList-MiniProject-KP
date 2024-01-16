@@ -2,10 +2,12 @@ package repository
 
 import (
 	"time"
+
 	"github.com/Arrasty/api_todolist/internal/domain"
 	"gorm.io/gorm"
 )
 
+//interface yang mendefinisikan kontrak untuk operasi CRUD pada entitas Todo
 type TodoRepository interface {
 	Create(todo *domain.Todo) error
 	GetAll() ([]domain.Todo, error)
@@ -14,12 +16,16 @@ type TodoRepository interface {
 	Delete(id uint) error
 	MarkAsCompleted(id uint) error
 	GetCompleted() ([]domain.Todo, error) // Tambahkan metode GetCompleted
+	GetUnCompleted() ([]domain.Todo, error)
 }
 
+//Struct menyimpan instance dari database GORM sebagai properti.
+//menyimpan koneksi database GORM
 type todoRepository struct {
 	db *gorm.DB
 }
 
+//Membuat instance baru dari todoRepository dengan koneksi database GORM
 func NewTodoRepository(db *gorm.DB) TodoRepository {
 	return &todoRepository{db}
 }
@@ -49,11 +55,20 @@ func (r *todoRepository) Delete(id uint) error {
 }
 
 func (r *todoRepository) MarkAsCompleted(id uint) error {
-	return r.db.Model(&domain.Todo{}).Where("id = ?", id).Update("completed", true).Update("completed_at", time.Now()).Error
+	return r.db.Model(&domain.Todo{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"completed":    true,
+		"completed_at": time.Now(),
+	}).Error
 }
 
 func (r *todoRepository) GetCompleted() ([]domain.Todo, error) {
 	var completedTodos []domain.Todo
 	err := r.db.Where("completed = ?", true).Find(&completedTodos).Error
 	return completedTodos, err
+}
+
+func (r *todoRepository) GetUnCompleted() ([]domain.Todo, error) {
+    var unCompletedTodos []domain.Todo
+    err := r.db.Where("completed = ?", false).Find(&unCompletedTodos).Error
+    return unCompletedTodos, err
 }
