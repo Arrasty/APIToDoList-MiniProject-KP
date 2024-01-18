@@ -41,7 +41,7 @@ func main() {
 
 	//mendefinisikan rute untuk operasi CRUD pada Todos
 	apiV1 := r.Group("todos/api/v1/")
-	
+	{
 	apiV1.POST("/create", todoHandler.Create)
 	apiV1.GET("", todoHandler.GetAll)
 	apiV1.GET("/:id", todoHandler.GetByID)
@@ -51,7 +51,7 @@ func main() {
 	apiV1.GET("/completed", todoHandler.GetCompleted)
 	apiV1.GET("/uncompleted", todoHandler.GetUnCompleted)
 	apiV1.GET("/search/:title", todoHandler.SearchByTitle)
-	
+	}
 	//menjalankan aplikasi Gin pada port 3000 sebagai default
 	port := os.Getenv("PORT")
 	if port == "" {
