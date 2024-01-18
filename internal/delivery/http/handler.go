@@ -2,6 +2,7 @@ package http
 
 import (
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Arrasty/api_todolist/internal/domain"
@@ -9,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//untuk menangani operasi CRUD pada TODO
+// untuk menangani operasi CRUD pada TODO
 type TodoHandler struct {
 	todoUseCase usecase.TodoUseCase
 }
@@ -19,16 +20,23 @@ func NewTodoHandler(todoUseCase usecase.TodoUseCase) *TodoHandler {
 }
 
 func (h *TodoHandler) Create(c *gin.Context) {
-	// Menggunakan struct yang hanya berisi field selain Complete
+	// Struktur untuk mengambil data dari body request
 	type TodoCreateInput struct {
-		Title       string `json:"title"`
+		Title       string `json:"title" binding:"required"`
 		Description string `json:"description"`
 	}
 
-	// Parsing body request ke struct TodoCreateInput
+	// Mengikat data JSON dari body request ke dalam struktur TodoCreateInput.
 	var input TodoCreateInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	err := c.ShouldBindJSON(&input)
+	if err != nil {
 		c.JSON(400, gin.H{"error": "error parsing request body"})
+		return
+	}
+
+	// Menambahkan validasi bahwa title harus diisi dan tidak hanya karakter spasi
+	if input.Title == "" || len(strings.TrimSpace(input.Title)) == 0 {
+		c.JSON(400, gin.H{"error": "title is required and cannot consist only of spaces"})
 		return
 	}
 
@@ -39,6 +47,7 @@ func (h *TodoHandler) Create(c *gin.Context) {
 		Completed:   false,
 	}
 
+	// Memanggil Create dari todoUseCase untuk menyimpan Todo ke dalam penyimpanan data.
 	if err := h.todoUseCase.Create(todo); err != nil {
 		c.JSON(500, gin.H{"error": "error creating todo"})
 		return
@@ -57,7 +66,7 @@ func (h *TodoHandler) GetAll(c *gin.Context) {
 	c.JSON(200, gin.H{"todos": todos})
 }
 
-//Memanggil GetCompleted dari todoUseCase untuk mendapatkan daftar Todo yang sudah selesai
+// Memanggil GetCompleted dari todoUseCase untuk mendapatkan daftar Todo yang sudah selesai
 func (h *TodoHandler) GetCompleted(c *gin.Context) {
 	completedTodos, err := h.todoUseCase.GetCompleted()
 	if err != nil {
@@ -74,6 +83,7 @@ func (h *TodoHandler) GetCompleted(c *gin.Context) {
 }
 
 func (h *TodoHandler) GetByID(c *gin.Context) {
+	//konversi id dari URL ke int
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid todo ID"})
@@ -90,6 +100,7 @@ func (h *TodoHandler) GetByID(c *gin.Context) {
 }
 
 func (h *TodoHandler) Update(c *gin.Context) {
+	//konversi id dari URL ke int
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid todo ID"})
@@ -128,6 +139,7 @@ func (h *TodoHandler) Update(c *gin.Context) {
 }
 
 func (h *TodoHandler) Delete(c *gin.Context) {
+	//konversi id dari URL ke int
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid todo ID"})
@@ -143,6 +155,7 @@ func (h *TodoHandler) Delete(c *gin.Context) {
 }
 
 func (h *TodoHandler) MarkAsCompleted(c *gin.Context) {
+	//konversi id dari URL ke int
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(400, gin.H{"error": "invalid todo ID"})
@@ -169,19 +182,41 @@ func (h *TodoHandler) MarkAsCompleted(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "todo marked as completed successfully", "todo": existingTodo})
 }
 
-//Function untuk menampilkan task yang uncompleted
+// Function untuk menampilkan task yang uncompleted
 func (h *TodoHandler) GetUnCompleted(c *gin.Context) {
-    // GetUnCompleted retrieves all uncompleted todos.
-    unCompletedTodos, err := h.todoUseCase.GetUnCompleted()
-    if err != nil {
-        c.JSON(500, gin.H{"error": "error getting uncompleted todos"})
-        return
-    }
+	// GetUnCompleted retrieves all uncompleted todos.
+	unCompletedTodos, err := h.todoUseCase.GetUnCompleted()
+	if err != nil {
+		c.JSON(500, gin.H{"error": "error getting uncompleted todos"})
+		return
+	}
 
-    if len(unCompletedTodos) == 0 {
-        c.JSON(200, gin.H{"message": "No uncompleted todos found"})
-        return
-    }
+	if len(unCompletedTodos) == 0 {
+		c.JSON(200, gin.H{"message": "No uncompleted todos found"})
+		return
+	}
 
-    c.JSON(200, gin.H{"unCompletedTodos": unCompletedTodos})
+	c.JSON(200, gin.H{"unCompletedTodos": unCompletedTodos})
+}
+
+func (h *TodoHandler) SearchByTitle(c *gin.Context) {
+	title := c.Param("title")
+	if title == "" {
+		c.JSON(400, gin.H{"error": "title parameter is required"})
+		return
+	}
+
+	// Memanggil metode SearchByTitle dari todoUseCase
+	todos, err := h.todoUseCase.SearchByTitle(title)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "error searching todos by title"})
+		return
+	}
+
+	if len(todos) == 0 {
+		c.JSON(200, gin.H{"message": "No todos found with the specified title"})
+		return
+	}
+
+	c.JSON(200, gin.H{"todos": todos})
 }

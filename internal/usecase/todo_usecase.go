@@ -1,19 +1,22 @@
 package usecase
 
-import "github.com/Arrasty/api_todolist/internal/domain"
+import (
+	"github.com/Arrasty/api_todolist/internal/domain"
+	"github.com/Arrasty/api_todolist/internal/repository"
+)
 
 //interface yang mendefinisikan kontrak untuk operasi CRUD pada entitas Todo.
 //sebagai dependensi untuk use case
-type TodoRepository interface {
-	Create(todo *domain.Todo) error
-	GetAll() ([]domain.Todo, error)
-	GetByID(id uint) (*domain.Todo, error)
-	Update(todo *domain.Todo) error
-	Delete(id uint) error
-	MarkAsCompleted(id uint) error
-	GetCompleted() ([]domain.Todo, error) // Sesuaikan signature
-	GetUnCompleted() ([]domain.Todo, error)
-}
+// type TodoRepository interface {
+// 	Create(todo *domain.Todo) error
+// 	GetAll() ([]domain.Todo, error)
+// 	GetByID(id uint) (*domain.Todo, error)
+// 	Update(todo *domain.Todo) error
+// 	Delete(id uint) error
+// 	MarkAsCompleted(id uint) error
+// 	GetCompleted() ([]domain.Todo, error) // Sesuaikan signature
+// 	GetUnCompleted() ([]domain.Todo, error)
+// }
 
 //interface yang mendefinisikan kontrak untuk operasi bisnis pada entitas Todo.
 //sebagai abstraksi antarmuka bagi use case yang akan diimplementasikan
@@ -24,18 +27,21 @@ type TodoUseCase interface {
 	Update(todo *domain.Todo) error
 	Delete(id uint) error
 	MarkAsCompleted(id uint) error
-	GetCompleted() ([]domain.Todo, error) // Sesuaikan signature
+	GetCompleted() ([]domain.Todo, error)
 	GetUnCompleted() ([]domain.Todo, error)
+	SearchByTitle(title string) ([]*domain.Todo, error)
 }
 
 //implementasi konkret dari TodoUseCase.
 //Struct menyimpan instance dari TodoRepository sebagai properti
 type todoUseCase struct {
-	todoRepository TodoRepository
+	todoRepository repository.TodoRepository
 }
 
-//membuat instance baru dari todoUseCase dengan dependensi TodoRepository
-func NewTodoUseCase(todoRepository TodoRepository) TodoUseCase {
+//Deklarasi fungsi NewTodoUseCase yang mengembalikan nilai bertipe TodoUseCase. 
+//Fungsi ini menerima satu parameter, yaitu todoRepository bertipe TodoRepository
+func NewTodoUseCase(todoRepository repository.TodoRepository) TodoUseCase {
+	//Fungsi ini membuat instance baru dari todoUseCase dan menginisialisasi propertinya dengan todoRepository yang diteruskan sebagai parameter
 	return &todoUseCase{todoRepository}
 }
 
@@ -64,7 +70,13 @@ func (uc *todoUseCase) MarkAsCompleted(id uint) error {
 }
 
 func (uc *todoUseCase) GetCompleted() ([]domain.Todo, error) {
-	return uc.todoRepository.GetCompleted()
+	completedTodos, err := uc.todoRepository.GetCompleted()
+    if err != nil {
+        return nil, err
+    }
+
+    return completedTodos, nil
+	//return uc.todoRepository.GetCompleted()
 }
 
 // GetUnCompleted retrieves all uncompleted todos.
@@ -79,4 +91,8 @@ func (uc *todoUseCase) GetUnCompleted() ([]domain.Todo, error) {
     }
 
     return uncompletedTodos, nil
+}
+
+func (uc *todoUseCase) SearchByTitle(title string) ([]*domain.Todo, error) {
+	return uc.todoRepository.SearchByTitle(title)
 }

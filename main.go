@@ -40,15 +40,18 @@ func main() {
 	todoHandler := http.NewTodoHandler(todoUseCase)
 
 	//mendefinisikan rute untuk operasi CRUD pada Todos
-	r.POST("/todos", todoHandler.Create)
-	r.GET("/todos", todoHandler.GetAll)
-	r.GET("/todos/:id", todoHandler.GetByID)
-	r.PUT("/todos/:id", todoHandler.Update)
-	r.DELETE("/todos/:id", todoHandler.Delete)
-	r.PUT("/todos/:id/complete", todoHandler.MarkAsCompleted)
-	r.GET("todos/completed", todoHandler.GetCompleted)
-	r.GET("/todos/uncompleted", todoHandler.GetUnCompleted)
-
+	apiV1 := r.Group("todos/api/v1/")
+	
+	apiV1.POST("/create", todoHandler.Create)
+	apiV1.GET("", todoHandler.GetAll)
+	apiV1.GET("/:id", todoHandler.GetByID)
+	apiV1.PUT("/update/:id", todoHandler.Update)
+	apiV1.DELETE("/delete/:id", todoHandler.Delete)
+	apiV1.PUT("/complete/:id", todoHandler.MarkAsCompleted)
+	apiV1.GET("/completed", todoHandler.GetCompleted)
+	apiV1.GET("/uncompleted", todoHandler.GetUnCompleted)
+	apiV1.GET("/search/:title", todoHandler.SearchByTitle)
+	
 	//menjalankan aplikasi Gin pada port 3000 sebagai default
 	port := os.Getenv("PORT")
 	if port == "" {
